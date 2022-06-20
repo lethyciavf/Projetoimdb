@@ -81,7 +81,45 @@ plt.legend(labels, loc='center', prop={'size': 12})
 
 plt.title("Distribução de Títulos", loc='center', fontdict={'fontsize': 20, 'fontweight': 20})
 
+#plt.show()
+
+
+#Resposta de pergunta 2
+
+resultado_2 = pd.read_sql_query("SELECT genres, COUNT(*) FROM titles WHERE type = 'movie' GROUP BY genres", conexao)
+resultado_2['genres'] = resultado_2['genres'].str.lower().values  #Padroniza a coluna genres
+
+#print(resultado_2)
+
+temporario = resultado_2['genres'].dropna()
+
+#Countvectorizer: Converte a coluna em um vetor one-hot encoded, qual contará o número de filmes em cada genero
+
+padrao = '(?u)\\b[\\w-]+\\b'  #Cria um padrão a ser buscado usando regex
+
+vetor = CountVectorizer(token_pattern=padrao, analyzer='word').fit(temporario)
+
+bag_generos = vetor.transform(temporario)  #Aplica a vetorização ao dataset sem valores NA
+
+generos_unicos = vetor.get_feature_names()  #Retorna generos únicos
+
+#Transforma os resultados para um DF
+generos = pd.DataFrame(bag_generos.todense(), columns=generos_unicos, index=temporario.index)
+
+#print(generos.info())  #Não se esquecer de ir printando para conferir os resultados
+
+#Na visualização de dados, nota-se uma coluna N, que foi tratada como genero não especificado
+generos = generos.drop(columns='n', axis=0)
+
+#Calcula o Percentual dos generos
+generos_percentual = 100 * pd.Series(generos.sum()).sort_values(ascending=False)/generos.shape[0]
+
+#print(generos_percentual.head(10))
+
+#Plota o gráfico final que responde a segunda questão
+plt.figure(figsize=(16, 8))
+sns.barplot(x=generos_percentual.values, y=generos_percentual.index, orient='h', palette='terrain')
+plt.ylabel('Gênero')
+plt.xlabel(f"\nPercentual de Filmes (%)")
+plt.title(f"\nNúmero Percentual de Títulos por Gênero ")
 plt.show()
-
-
-#
